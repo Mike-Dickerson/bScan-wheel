@@ -1,0 +1,34 @@
+name: Build Open3D wheel (no AVX2)
+
+on:
+  workflow_dispatch: {}
+  push:
+    branches: [main]
+    paths:
+      - 'open3d-version.txt'
+      - 'scripts/build.sh'
+      - 'scripts/patch_embree.py'
+      - '.github/workflows/build-wheel.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 240
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Open3D wheel
+        run: bash scripts/build.sh
+
+      - name: Create release and upload wheel
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION="$(tr -d '[:space:]' < open3d-version.txt)"
+          TAG="v${VERSION}-${GITHUB_RUN_NUMBER}"
+          gh release create "$TAG" dist/*.whl \
+            --title "Open3D v${VERSION} (no AVX2)" \
+            --notes "Open3D v${VERSION} built from source with Embree's AVX/AVX2 requirement removed, for use on older x86-64 CPUs (e.g. pre-2011 Xeons). Built with -DUSE_BLAS=ON (OpenBLAS instead of Intel MKL). Background: https://github.com/isl-org/Open3D/issues/4970 and https://github.com/isl-org/Open3D/issues/6127"
