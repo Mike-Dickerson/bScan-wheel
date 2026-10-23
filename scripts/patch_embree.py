@@ -40,12 +40,28 @@ NEW_BLOCK = '''else() # Linux(x86) and WIN32
 
 
 def main():
-    if len(sys.argv) != 2:
-        sys.exit(f"usage: {sys.argv[0]} <path-to-embree.cmake>")
+    args = sys.argv[1:]
+    check_mode = False
+    if args and args[0] == "--check":
+        check_mode = True
+        args = args[1:]
 
-    path = sys.argv[1]
+    if len(args) != 1:
+        sys.exit(f"usage: {sys.argv[0]} [--check] <path-to-embree.cmake>")
+
+    path = args[0]
     with open(path, "r") as f:
         content = f.read()
+
+    if check_mode:
+        # Used by check_upstream.sh to test a candidate new Open3D version's
+        # embree.cmake before opening a version-bump PR, without writing
+        # anything.
+        if OLD_BLOCK in content or NEW_BLOCK in content:
+            print(f"OK: {path} matches the expected ISA block - patch applies cleanly.")
+            sys.exit(0)
+        print(f"MISMATCH: expected ISA block not found in {path} - patch_embree.py needs review.")
+        sys.exit(1)
 
     if OLD_BLOCK not in content:
         if NEW_BLOCK in content:

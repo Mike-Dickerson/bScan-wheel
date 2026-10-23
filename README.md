@@ -40,3 +40,17 @@ x86-64 target.
 
 Edit `open3d-version.txt` to the new version tag (e.g. `0.19.0`) and push to
 `main` — the workflow will rebuild and publish automatically.
+
+## Staying current with upstream Open3D
+
+`.github/workflows/check-open3d-version.yml` runs weekly (plus manual
+`workflow_dispatch`) and checks `isl-org/Open3D`'s latest release against
+`open3d-version.txt`. If there's a newer one, it opens a PR bumping the
+version file - it does not merge automatically. The PR body notes whether
+the newer release changed `3rdparty/embree/embree.cmake`'s structure (via
+`scripts/patch_embree.py --check`); if it has, `patch_embree.py` needs
+manual review before merging, since the build will otherwise fail fast
+rather than silently produce an unpatched (AVX2-dependent) wheel.
+
+Merging the PR triggers `build-wheel.yml` as usual and publishes a new
+release.
